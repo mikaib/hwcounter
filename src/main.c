@@ -4,8 +4,11 @@
 #include <util/atomic.h>
 
 ssd_display g_display;
-uint16_t g_counter = 0;
-uint64_t g_timer = 0;
+uint64_t g_last_passed = 0;
+uint16_t g_counter     = 0;
+uint64_t g_timer       = 0;
+float g_speed          = 0;
+float g_dist           = 0.6;
 
 void InitializeIO() {
     g_display = (ssd_display){
@@ -51,8 +54,27 @@ uint64_t millis() {
     return value;
 }
 
-void vehicle_passed() {
+uint8_t button_state() {
+    return !pin_get_state(PIN_A4) || !pin_get_state(PIN_A5);
+}
 
+
+uint8_t axel_detected() {
+    return button_state();
+}
+
+void vehicle_passed() {
+    uint64_t now = millis();
+    uint64_t dt = now - g_last_passed;
+
+    if (axel_detected()) {
+        if (dt >= 1000 && dt <= 2000) {
+            g_speed = ((float)dt / 1000.0) / g_dist;
+            g_counter = (g_counter + 1) % 16;
+        }
+
+        g_last_passed = now;
+    }
 }
 
 void display_counter() {
@@ -63,16 +85,8 @@ void display_counter() {
     pin_set_state(PIN_A3, (g_counter >> 3) & 1);
 
     // speedometer
-    ssd_write_int(&g_display, 0);
+    ssd_write_int(&g_display, (uint16_t)(g_speed));
     ssd_render(g_display);
-}
-
-void axel_detected() {
-
-}
-
-void button_state() {
-
 }
 
 int main() {
@@ -80,6 +94,7 @@ int main() {
     InitializeIO();
 
     for (;;) {
+        vehicle_passed();
         display_counter();
     }
 
