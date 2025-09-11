@@ -71,6 +71,7 @@ void vehicle_passed() {
         if (dt >= 1000 && dt <= 2000) {
             g_speed = g_dist / ((float)dt / 1000.0);
             g_counter = (g_counter + 1) % 16;
+            return;
         }
 
         g_last_passed = now;
@@ -85,7 +86,7 @@ void display_counter() {
     pin_set_state(PIN_A3, (g_counter >> 3) & 1);
 
     // speedometer
-    ssd_write_int(&g_display, (uint16_t)(g_speed));
+    ssd_write_int(&g_display, (uint16_t)(g_speed * 100.0));
     ssd_render(g_display);
 }
 
