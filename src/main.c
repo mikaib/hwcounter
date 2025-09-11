@@ -71,6 +71,7 @@ void vehicle_passed() {
         if (dt >= 1000 && dt <= 2000) {
             g_speed = g_dist / ((float)dt / 1000.0);
             g_counter = (g_counter + 1) % 16;
+            g_last_passed += 10000; // disable
             return;
         }
 
