@@ -102,20 +102,30 @@ uint8_t axel_detected() {
     return button_state_a() || button_state_b();
 }
 
+uint8_t set_status_led(uint8_t state) {
+    // TODO: set led status
+}
 
 void vehicle_passed() {
     uint64_t now = millis();
     uint64_t dt = now - g_last_passed;
 
     if (axel_detected()) {
-        if (dt >= g_measurement_min && dt <= g_measurement_max) {
-            g_speed = g_dist / ((float)dt / 1000.0);
+        if (dt >= g_measurement_min && dt <= g_measurement_max && g_measurement_active == 1) {
+            g_speed = (g_dist / ((float)dt / (float)SECONDS_TO_MILLIS)) * MS_TO_KMH;
             g_counter = (g_counter + 1) % 16;
-            g_last_passed = now - g_measurement_max - 1; // prevents invalid repeated measurements
+            g_measurement_active = 0;
+            set_status_led(0); // ok
             return;
         }
 
+        if (g_measurement_active == 1) { // too fast or too slow, measurement failed!
+            set_status_led(1);
+            g_measurement_active = 0;
+        }
+
         g_last_passed = now;
+        g_measurement_active = 1;
     }
 }
 
