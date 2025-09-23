@@ -96,8 +96,12 @@ uint8_t button_state_b() {
 }
 
 uint8_t axel_detected() {
-    return button_state();
+    // the system doesn't really "care" about which sensor is triggered, the measurement will work either way.
+    // the main important part is that there *are* multiple sensors. by handling it this way we can avoid redundant logic.
+    // note that we can safely do this because the system isn't designed to handle directional traffic anyway (e.g. both increase and decrease the counter based on direction)
+    return button_state_a() || button_state_b();
 }
+
 
 void vehicle_passed() {
     uint64_t now = millis();
