@@ -136,9 +136,13 @@ void display_counter() {
     pin_set_state(PIN_A2, (g_counter >> 2) & 1);
     pin_set_state(PIN_A3, (g_counter >> 3) & 1);
 
-    // speedometer
+    // write speedometer
     ssd_write_int(&g_display, (uint16_t)(g_speed * 100.0));
-    ssd_render(g_display);
+
+    // render speedometer
+    if (g_measurement_active == 1) {
+        ssd_render(g_display);
+    }
 }
 
 int main() {
