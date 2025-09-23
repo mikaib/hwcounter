@@ -69,8 +69,30 @@ uint64_t millis() {
     return value;
 }
 
-uint8_t button_state() {
-    return !pin_get_state(PIN_A4) || !pin_get_state(PIN_A5);
+uint8_t button_state_a() {
+    uint8_t current_state = !pin_get_state(PIN_A4);
+    uint64_t now = millis();
+
+    if (now - g_debounce_a >= 0) {
+        g_debounce_a = now + SENSOR_DEBOUNCE_MS;
+        g_last_state_a = current_state;
+        return current_state;
+    }
+
+    return g_last_state_a;
+}
+
+uint8_t button_state_b() {
+    uint8_t current_state = !pin_get_state(PIN_A5);
+    uint64_t now = millis();
+
+    if (now - g_debounce_b >= 0) {
+        g_debounce_b = now + SENSOR_DEBOUNCE_MS;
+        g_last_state_b = current_state;
+        return current_state;
+    }
+
+    return g_last_state_b;
 }
 
 uint8_t axel_detected() {
