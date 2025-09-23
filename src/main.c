@@ -129,6 +129,16 @@ void vehicle_passed() {
     }
 }
 
+void poll_measurement_state() {
+    uint64_t now = millis();
+    uint64_t dt = now - g_last_passed;
+
+    if (g_measurement_active == 1 && (dt > g_measurement_max)) {
+        g_measurement_active = 0;
+        set_status_led(1); // error
+    }
+}
+
 void display_counter() {
     // counter
     pin_set_state(PIN_A0, (g_counter >> 0) & 1);
@@ -150,6 +160,7 @@ int main() {
     initialize_io();
 
     for (;;) {
+        poll_measurement_state();
         vehicle_passed();
         display_counter();
     }
