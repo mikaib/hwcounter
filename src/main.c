@@ -3,14 +3,22 @@
 #include <libssd.h>
 #include <util/atomic.h>
 
-ssd_display g_display;
-uint64_t g_last_passed = 0;
-uint16_t g_counter     = 0;
-uint64_t g_timer       = 0;
-float g_speed          = 0;
-float g_dist           = 0.6;
+#define SECONDS_TO_MILLIS 1000
 
-void InitializeIO() {
+#define DEFAULT_SENSOR_DIST_M 0.6
+#define SPEED_MEASUREMENT_MIN_TIME_MS 1000
+#define SPEED_MEASUREMENT_MAX_TIME_MS 2000
+
+ssd_display g_display;
+uint64_t g_last_passed     = 0;
+uint16_t g_counter         = 0;
+uint64_t g_timer           = 0;
+float g_speed              = 0;
+float g_dist               = DEFAULT_SENSOR_DIST_M;
+uint16_t g_measurement_min = SPEED_MEASUREMENT_MIN_TIME_MS;
+uint16_t g_measurement_max = SPEED_MEASUREMENT_MAX_TIME_MS;
+
+void initialize_io() {
     g_display = (ssd_display){
         .display_top = PIN_D2,
         .display_top_left = PIN_D3,
@@ -58,7 +66,6 @@ uint8_t button_state() {
     return !pin_get_state(PIN_A4) || !pin_get_state(PIN_A5);
 }
 
-
 uint8_t axel_detected() {
     return button_state();
 }
@@ -68,10 +75,10 @@ void vehicle_passed() {
     uint64_t dt = now - g_last_passed;
 
     if (axel_detected()) {
-        if (dt >= 1000 && dt <= 2000) {
+        if (dt >= g_measurement_min && dt <= g_measurement_max) {
             g_speed = g_dist / ((float)dt / 1000.0);
             g_counter = (g_counter + 1) % 16;
-            g_last_passed += 10000; // disable
+            g_last_passed = now - g_measurement_max - 1; // prevents invalid repeated measurements
             return;
         }
 
@@ -93,7 +100,7 @@ void display_counter() {
 
 int main() {
     init();
-    InitializeIO();
+    initialize_io();
 
     for (;;) {
         vehicle_passed();
