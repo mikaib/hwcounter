@@ -4,19 +4,26 @@
 #include <util/atomic.h>
 
 #define SECONDS_TO_MILLIS 1000
+#define MS_TO_KMH 3.6
 
 #define DEFAULT_SENSOR_DIST_M 0.6
 #define SPEED_MEASUREMENT_MIN_TIME_MS 1000
 #define SPEED_MEASUREMENT_MAX_TIME_MS 2000
+#define SENSOR_DEBOUNCE_MS 50
 
 ssd_display g_display;
-uint64_t g_last_passed     = 0;
-uint16_t g_counter         = 0;
-uint64_t g_timer           = 0;
-float g_speed              = 0;
-float g_dist               = DEFAULT_SENSOR_DIST_M;
-uint16_t g_measurement_min = SPEED_MEASUREMENT_MIN_TIME_MS;
-uint16_t g_measurement_max = SPEED_MEASUREMENT_MAX_TIME_MS;
+uint64_t g_last_passed        = 0;
+uint64_t g_timer              = 0;
+uint64_t g_debounce_a         = 0;
+uint64_t g_debounce_b         = 0;
+uint16_t g_counter            = 0;
+float g_speed                 = 0;
+float g_dist                  = DEFAULT_SENSOR_DIST_M;
+uint16_t g_measurement_min    = SPEED_MEASUREMENT_MIN_TIME_MS;
+uint16_t g_measurement_max    = SPEED_MEASUREMENT_MAX_TIME_MS;
+uint16_t g_measurement_active = 0;
+uint8_t  g_last_state_a       = 0;
+uint8_t  g_last_state_b       = 0;
 
 void initialize_io() {
     g_display = (ssd_display){
