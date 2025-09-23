@@ -150,7 +150,7 @@ void display_counter() {
     ssd_write_int(&g_display, (uint16_t)(g_speed * 100.0));
 
     // render speedometer
-    if (g_measurement_active == 1) {
+    if (g_measurement_active == 0) {
         ssd_render(g_display);
     }
 }
