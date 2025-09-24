@@ -122,6 +122,7 @@ void vehicle_passed() {
         if (g_measurement_active == 1) { // too fast or too slow, measurement failed!
             set_status_led(1);
             g_measurement_active = 0;
+            return;
         }
 
         g_last_passed = now;
