@@ -1,6 +1,7 @@
 #include <libusart.h>
 #include <libpin.h>
 #include <libssd.h>
+#include <string.h>
 #include <util/atomic.h>
 
 #define SECONDS_TO_MILLIS 1000
@@ -164,6 +165,32 @@ void display_counter() {
         ssd_render(g_display);
     } else {
         ssd_render_char(g_display, 0, SSD_CHAR_NONE);
+    }
+}
+
+float get_gvar(const char* name) {
+    if (strcmp(name, "g_dist") == 0) {
+        return g_dist;
+    }
+
+    if (strcmp(name, "g_measurement_min") == 0) {
+        return (float)g_measurement_min;
+    }
+
+    if (strcmp(name, "g_measurement_max") == 0) {
+        return (float)g_measurement_max;
+    }
+
+    return 0;
+}
+
+void set_gvar(const char* name, float value) {
+    if (strcmp(name, "g_dist") == 0) {
+        g_dist = value;
+    } else if (strcmp(name, "g_measurement_min") == 0) {
+        g_measurement_min = (uint16_t)value;
+    } else if (strcmp(name, "g_measurement_max") == 0) {
+        g_measurement_max = (uint16_t)value;
     }
 }
 
