@@ -168,32 +168,6 @@ void display_counter() {
     }
 }
 
-float get_gvar(const char* name) {
-    if (strcmp(name, "g_dist") == 0) {
-        return g_dist;
-    }
-
-    if (strcmp(name, "g_measurement_min") == 0) {
-        return (float)g_measurement_min;
-    }
-
-    if (strcmp(name, "g_measurement_max") == 0) {
-        return (float)g_measurement_max;
-    }
-
-    return 0;
-}
-
-void set_gvar(const char* name, float value) {
-    if (strcmp(name, "g_dist") == 0) {
-        g_dist = value;
-    } else if (strcmp(name, "g_measurement_min") == 0) {
-        g_measurement_min = (uint16_t)value;
-    } else if (strcmp(name, "g_measurement_max") == 0) {
-        g_measurement_max = (uint16_t)value;
-    }
-}
-
 int main() {
     init();
     initialize_io();
