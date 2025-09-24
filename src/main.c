@@ -38,13 +38,20 @@ void initialize_io() {
         .multiplex = { PIN_D10, PIN_D9, PIN_D11, PIN_D12 }
     };
 
+    // binary counter
     pin_set_mode(PIN_A0, PIN_MODE_OUTPUT);
     pin_set_mode(PIN_A1, PIN_MODE_OUTPUT);
     pin_set_mode(PIN_A2, PIN_MODE_OUTPUT);
     pin_set_mode(PIN_A3, PIN_MODE_OUTPUT);
+
+    // status led
+    pin_set_mode(PIN_D13, PIN_MODE_OUTPUT);
+
+    // sensors
     pin_set_mode(PIN_A4, PIN_MODE_INPUT_PULLUP);
     pin_set_mode(PIN_A5, PIN_MODE_INPUT_PULLUP);
 
+    // 7-segment display
     ssd_init(&g_display);
 }
 
@@ -73,26 +80,26 @@ uint8_t button_state_a() {
     uint8_t current_state = !pin_get_state(PIN_A4);
     uint64_t now = millis();
 
-    if (now - g_debounce_a >= 0) {
+    if (now - g_debounce_a >= 0.0 && g_last_state_a != current_state) {
         g_debounce_a = now + SENSOR_DEBOUNCE_MS;
         g_last_state_a = current_state;
         return current_state;
     }
 
-    return g_last_state_a;
+    return 0;
 }
 
 uint8_t button_state_b() {
     uint8_t current_state = !pin_get_state(PIN_A5);
     uint64_t now = millis();
 
-    if (now - g_debounce_b >= 0) {
+    if (now - g_debounce_b >= 0.0 && g_last_state_b != current_state) {
         g_debounce_b = now + SENSOR_DEBOUNCE_MS;
         g_last_state_b = current_state;
         return current_state;
     }
 
-    return g_last_state_b;
+    return 0;
 }
 
 uint8_t axel_detected() {
@@ -102,8 +109,8 @@ uint8_t axel_detected() {
     return button_state_a() || button_state_b();
 }
 
-uint8_t set_status_led(uint8_t state) {
-    // TODO: set led status
+void set_status_led(uint8_t state) {
+    pin_set_state(PIN_D13, state);
 }
 
 void vehicle_passed() {
@@ -153,6 +160,8 @@ void display_counter() {
     // render speedometer
     if (g_measurement_active == 0) {
         ssd_render(g_display);
+    } else {
+        ssd_render_char(g_display, 0, SSD_CHAR_NONE);
     }
 }
 
