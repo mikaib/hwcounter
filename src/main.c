@@ -34,8 +34,9 @@ void initialize_io() {
         .display_bottom_left = PIN_D6,
         .display_bottom_right = PIN_D7,
         .display_bottom = PIN_D8,
-        .display_count = 4,
-        .multiplex = { PIN_D10, PIN_D9, PIN_D11, PIN_D12 }
+        .display_dot = PIN_D12,
+        .display_count = 3,
+        .multiplex = { PIN_D10, PIN_D9, PIN_D11 }
     };
 
     // binary counter
@@ -53,6 +54,7 @@ void initialize_io() {
 
     // 7-segment display
     ssd_init(&g_display);
+    ssd_write_dot(&g_display, 0, 1);
 }
 
 void init() {

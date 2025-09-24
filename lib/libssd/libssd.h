@@ -53,6 +53,7 @@ typedef struct ssd_display {
     pin_def display_bottom_left;
     pin_def display_bottom_right;
     pin_def display_bottom;
+    pin_def display_dot;
 
     // multiplexing
     uint8_t display_count;
@@ -60,6 +61,7 @@ typedef struct ssd_display {
 
     // state
     ssd_char state[SSD_MAX_DISPLAYS];
+    uint8_t dot_state[SSD_MAX_DISPLAYS];
 } ssd_display;
 
 void ssd_init(ssd_display* disp);
@@ -68,6 +70,7 @@ void ssd_render(ssd_display disp);
 void ssd_write_char(ssd_display* disp, uint8_t sub, ssd_char value);
 void ssd_write_int(ssd_display* disp, uint16_t value);
 void ssd_write_hex(ssd_display* disp, uint16_t value);
+void ssd_write_dot(ssd_display* disp, uint8_t sub, uint8_t state);
 void ssd_shutdown(ssd_display disp);
 
 #endif //LIBSSD_H
