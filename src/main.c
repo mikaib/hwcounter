@@ -1,6 +1,7 @@
 #include <libusart.h>
 #include <libpin.h>
 #include <libssd.h>
+#include <string.h>
 #include <util/atomic.h>
 
 #define SECONDS_TO_MILLIS 1000
@@ -34,8 +35,9 @@ void initialize_io() {
         .display_bottom_left = PIN_D6,
         .display_bottom_right = PIN_D7,
         .display_bottom = PIN_D8,
-        .display_count = 4,
-        .multiplex = { PIN_D10, PIN_D9, PIN_D11, PIN_D12 }
+        .display_dot = PIN_D12,
+        .display_count = 3,
+        .multiplex = { PIN_D10, PIN_D9, PIN_D11 }
     };
 
     // binary counter
@@ -53,6 +55,7 @@ void initialize_io() {
 
     // 7-segment display
     ssd_init(&g_display);
+    ssd_write_dot(&g_display, 0, 1);
 }
 
 void init() {
@@ -162,6 +165,32 @@ void display_counter() {
         ssd_render(g_display);
     } else {
         ssd_render_char(g_display, 0, SSD_CHAR_NONE);
+    }
+}
+
+float get_gvar(const char* name) {
+    if (strcmp(name, "g_dist") == 0) {
+        return g_dist;
+    }
+
+    if (strcmp(name, "g_measurement_min") == 0) {
+        return (float)g_measurement_min;
+    }
+
+    if (strcmp(name, "g_measurement_max") == 0) {
+        return (float)g_measurement_max;
+    }
+
+    return 0;
+}
+
+void set_gvar(const char* name, float value) {
+    if (strcmp(name, "g_dist") == 0) {
+        g_dist = value;
+    } else if (strcmp(name, "g_measurement_min") == 0) {
+        g_measurement_min = (uint16_t)value;
+    } else if (strcmp(name, "g_measurement_max") == 0) {
+        g_measurement_max = (uint16_t)value;
     }
 }
 

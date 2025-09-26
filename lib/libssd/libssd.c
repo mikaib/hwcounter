@@ -29,6 +29,7 @@ void ssd_init(ssd_display* disp) {
         pin_set_mode(disp->multiplex[idx], PIN_MODE_OUTPUT);
         pin_set_state(disp->multiplex[idx], PIN_STATE_ON);
         disp->state[idx] = SSD_CHAR_NONE;
+        disp->dot_state[idx] = 0;
     }
 
     pin_set_mode(disp->display_top, PIN_MODE_OUTPUT);
@@ -38,6 +39,7 @@ void ssd_init(ssd_display* disp) {
     pin_set_mode(disp->display_bottom_left, PIN_MODE_OUTPUT);
     pin_set_mode(disp->display_bottom_right, PIN_MODE_OUTPUT);
     pin_set_mode(disp->display_bottom, PIN_MODE_OUTPUT);
+    pin_set_mode(disp->display_dot, PIN_MODE_OUTPUT);
 }
 
 void ssd_render_char(const ssd_display disp, const uint8_t sub, const ssd_char value) {
@@ -52,6 +54,7 @@ void ssd_render_char(const ssd_display disp, const uint8_t sub, const ssd_char v
     pin_set_state(disp.display_bottom_left, value.char_bl);
     pin_set_state(disp.display_bottom_right, value.char_br);
     pin_set_state(disp.display_bottom, value.char_b);
+    pin_set_state(disp.display_dot, disp.dot_state[sub]);
 
     pin_set_state(disp.multiplex[sub], PIN_STATE_OFF);
 }
@@ -95,6 +98,14 @@ void ssd_write_hex(ssd_display* disp, const uint16_t value) {
         temp >>= 4;
         pos--;
     }
+}
+
+void ssd_write_dot(ssd_display* disp, const uint8_t sub, const uint8_t state) {
+    if (sub > SSD_MAX_DISPLAYS || sub < 0) {
+        return;
+    }
+
+    disp->dot_state[sub] = state;
 }
 
 void ssd_shutdown(const ssd_display disp) {
