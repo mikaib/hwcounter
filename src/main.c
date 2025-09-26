@@ -3,11 +3,29 @@
 #include <libssd.h>
 #include <util/atomic.h>
 
-ssd_display g_display;
-uint16_t g_counter = 0;
-uint64_t g_timer = 0;
+#define SECONDS_TO_MILLIS 1000
+#define MS_TO_KMH 3.6
 
-void InitializeIO() {
+#define DEFAULT_SENSOR_DIST_M 0.6
+#define SPEED_MEASUREMENT_MIN_TIME_MS 1000
+#define SPEED_MEASUREMENT_MAX_TIME_MS 2000
+#define SENSOR_DEBOUNCE_MS 50
+
+ssd_display g_display;
+uint64_t g_last_passed        = 0;
+uint64_t g_timer              = 0;
+uint64_t g_debounce_a         = 0;
+uint64_t g_debounce_b         = 0;
+uint16_t g_counter            = 0;
+float g_speed                 = 0;
+float g_dist                  = DEFAULT_SENSOR_DIST_M;
+uint16_t g_measurement_min    = SPEED_MEASUREMENT_MIN_TIME_MS;
+uint16_t g_measurement_max    = SPEED_MEASUREMENT_MAX_TIME_MS;
+uint16_t g_measurement_active = 0;
+uint8_t  g_last_state_a       = 0;
+uint8_t  g_last_state_b       = 0;
+
+void initialize_io() {
     g_display = (ssd_display){
         .display_top = PIN_D2,
         .display_top_left = PIN_D3,
@@ -51,8 +69,28 @@ uint64_t millis() {
     return value;
 }
 
-void vehicle_passed() {
+uint8_t button_state() {
+    return !pin_get_state(PIN_A4) || !pin_get_state(PIN_A5);
+}
 
+uint8_t axel_detected() {
+    return button_state();
+}
+
+void vehicle_passed() {
+    uint64_t now = millis();
+    uint64_t dt = now - g_last_passed;
+
+    if (axel_detected()) {
+        if (dt >= g_measurement_min && dt <= g_measurement_max) {
+            g_speed = g_dist / ((float)dt / 1000.0);
+            g_counter = (g_counter + 1) % 16;
+            g_last_passed = now - g_measurement_max - 1; // prevents invalid repeated measurements
+            return;
+        }
+
+        g_last_passed = now;
+    }
 }
 
 void display_counter() {
@@ -63,23 +101,16 @@ void display_counter() {
     pin_set_state(PIN_A3, (g_counter >> 3) & 1);
 
     // speedometer
-    ssd_write_int(&g_display, 0);
+    ssd_write_int(&g_display, (uint16_t)(g_speed * 100.0));
     ssd_render(g_display);
-}
-
-void axel_detected() {
-
-}
-
-void button_state() {
-
 }
 
 int main() {
     init();
-    InitializeIO();
+    initialize_io();
 
     for (;;) {
+        vehicle_passed();
         display_counter();
     }
 
