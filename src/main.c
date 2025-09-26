@@ -38,13 +38,20 @@ void initialize_io() {
         .multiplex = { PIN_D10, PIN_D9, PIN_D11, PIN_D12 }
     };
 
+    // binary counter
     pin_set_mode(PIN_A0, PIN_MODE_OUTPUT);
     pin_set_mode(PIN_A1, PIN_MODE_OUTPUT);
     pin_set_mode(PIN_A2, PIN_MODE_OUTPUT);
     pin_set_mode(PIN_A3, PIN_MODE_OUTPUT);
+
+    // status led
+    pin_set_mode(PIN_D13, PIN_MODE_OUTPUT);
+
+    // sensors
     pin_set_mode(PIN_A4, PIN_MODE_INPUT_PULLUP);
     pin_set_mode(PIN_A5, PIN_MODE_INPUT_PULLUP);
 
+    // 7-segment display
     ssd_init(&g_display);
 }
 
@@ -69,12 +76,41 @@ uint64_t millis() {
     return value;
 }
 
-uint8_t button_state() {
-    return !pin_get_state(PIN_A4) || !pin_get_state(PIN_A5);
+uint8_t button_state_a() {
+    uint8_t current_state = !pin_get_state(PIN_A4);
+    uint64_t now = millis();
+
+    if (now - g_debounce_a >= 0.0 && g_last_state_a != current_state) {
+        g_debounce_a = now + SENSOR_DEBOUNCE_MS;
+        g_last_state_a = current_state;
+        return current_state;
+    }
+
+    return 0;
+}
+
+uint8_t button_state_b() {
+    uint8_t current_state = !pin_get_state(PIN_A5);
+    uint64_t now = millis();
+
+    if (now - g_debounce_b >= 0.0 && g_last_state_b != current_state) {
+        g_debounce_b = now + SENSOR_DEBOUNCE_MS;
+        g_last_state_b = current_state;
+        return current_state;
+    }
+
+    return 0;
 }
 
 uint8_t axel_detected() {
-    return button_state();
+    // the system doesn't really "care" about which sensor is triggered, the measurement will work either way.
+    // the main important part is that there *are* multiple sensors. by handling it this way we can avoid redundant logic.
+    // note that we can safely do this because the system isn't designed to handle directional traffic anyway (e.g. both increase and decrease the counter based on direction)
+    return button_state_a() || button_state_b();
+}
+
+void set_status_led(uint8_t state) {
+    pin_set_state(PIN_D13, state);
 }
 
 void vehicle_passed() {
@@ -82,14 +118,32 @@ void vehicle_passed() {
     uint64_t dt = now - g_last_passed;
 
     if (axel_detected()) {
-        if (dt >= g_measurement_min && dt <= g_measurement_max) {
-            g_speed = g_dist / ((float)dt / 1000.0);
+        if (dt >= g_measurement_min && dt <= g_measurement_max && g_measurement_active == 1) {
+            g_speed = (g_dist / ((float)dt / (float)SECONDS_TO_MILLIS)) * MS_TO_KMH;
             g_counter = (g_counter + 1) % 16;
-            g_last_passed = now - g_measurement_max - 1; // prevents invalid repeated measurements
+            g_measurement_active = 0;
+            set_status_led(0); // ok
+            return;
+        }
+
+        if (g_measurement_active == 1) { // too fast or too slow, measurement failed!
+            set_status_led(1);
+            g_measurement_active = 0;
             return;
         }
 
         g_last_passed = now;
+        g_measurement_active = 1;
+    }
+}
+
+void poll_measurement_state() {
+    uint64_t now = millis();
+    uint64_t dt = now - g_last_passed;
+
+    if (g_measurement_active == 1 && (dt > g_measurement_max)) {
+        g_measurement_active = 0;
+        set_status_led(1); // error
     }
 }
 
@@ -100,9 +154,15 @@ void display_counter() {
     pin_set_state(PIN_A2, (g_counter >> 2) & 1);
     pin_set_state(PIN_A3, (g_counter >> 3) & 1);
 
-    // speedometer
+    // write speedometer
     ssd_write_int(&g_display, (uint16_t)(g_speed * 100.0));
-    ssd_render(g_display);
+
+    // render speedometer
+    if (g_measurement_active == 0) {
+        ssd_render(g_display);
+    } else {
+        ssd_render_char(g_display, 0, SSD_CHAR_NONE);
+    }
 }
 
 int main() {
@@ -110,6 +170,7 @@ int main() {
     initialize_io();
 
     for (;;) {
+        poll_measurement_state();
         vehicle_passed();
         display_counter();
     }
