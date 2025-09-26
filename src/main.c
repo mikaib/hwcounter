@@ -8,8 +8,8 @@
 #define MS_TO_KMH 3.6
 
 #define DEFAULT_SENSOR_DIST_M 0.6
-#define SPEED_MEASUREMENT_MIN_TIME_MS 1000
-#define SPEED_MEASUREMENT_MAX_TIME_MS 2000
+#define SPEED_MEASUREMENT_MIN_TIME_MS 0
+#define SPEED_MEASUREMENT_MAX_TIME_MS 1000
 #define SENSOR_DEBOUNCE_MS 50
 
 ssd_display g_display;
@@ -55,7 +55,6 @@ void initialize_io() {
 
     // 7-segment display
     ssd_init(&g_display);
-    ssd_write_dot(&g_display, 0, 1);
 }
 
 void init() {
@@ -162,35 +161,11 @@ void display_counter() {
 
     // render speedometer
     if (g_measurement_active == 0) {
+        ssd_write_dot(&g_display, 0, 1);
         ssd_render(g_display);
     } else {
+        ssd_write_dot(&g_display, 0, 0);
         ssd_render_char(g_display, 0, SSD_CHAR_NONE);
-    }
-}
-
-float get_gvar(const char* name) {
-    if (strcmp(name, "g_dist") == 0) {
-        return g_dist;
-    }
-
-    if (strcmp(name, "g_measurement_min") == 0) {
-        return (float)g_measurement_min;
-    }
-
-    if (strcmp(name, "g_measurement_max") == 0) {
-        return (float)g_measurement_max;
-    }
-
-    return 0;
-}
-
-void set_gvar(const char* name, float value) {
-    if (strcmp(name, "g_dist") == 0) {
-        g_dist = value;
-    } else if (strcmp(name, "g_measurement_min") == 0) {
-        g_measurement_min = (uint16_t)value;
-    } else if (strcmp(name, "g_measurement_max") == 0) {
-        g_measurement_max = (uint16_t)value;
     }
 }
 
